@@ -200,3 +200,6 @@ secrets/
 # Local development
 local/
 .local/
+
+
+my-todo-app/

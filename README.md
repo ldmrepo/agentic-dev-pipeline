@@ -99,13 +99,21 @@ claude auth login
 docker-compose up -d
 ```
 
-### 3단계: 첫 번째 파이프라인 실행
+### 3단계: 명령어 설정 (한 번만)
 ```bash
-# 건강상태 확인
-./scripts/health-check.sh
+# 방법 1: 사용자 레벨 명령어로 복사 (권장) ⭐
+mkdir -p ~/.claude/commands
+cp .claude/commands/*.md ~/.claude/commands/
 
-# 요구사항 설정
-export REQUIREMENTS="사용자 인증과 프로필 관리가 있는 웹 애플리케이션"
+# 방법 2: 심볼릭 링크 생성
+ln -sf $(pwd)/.claude/commands ~/.claude/
+```
+
+### 4단계: 새 프로젝트 생성 및 실행
+```bash
+# 원하는 위치에 프로젝트 디렉토리 생성
+mkdir ~/projects/my-todo-app
+cd ~/projects/my-todo-app
 
 # 🎉 마법 같은 순간 - 전체 애플리케이션 자동 개발!
 claude /basic-development "사용자 인증과 프로필 관리가 있는 웹 애플리케이션"
@@ -188,6 +196,47 @@ claude /basic-development "B2B SaaS 플랫폼 (대시보드, 분석, 청구)"
 claude /microservices-development "기존 모놀리스를 마이크로서비스로 분해"
 ```
 
+## 📂 프로젝트 생성 모범 사례
+
+### 🎯 권장 방법: 사용자 레벨 명령어 설정
+
+**초기 설정 (한 번만)**
+```bash
+# agentic-dev-pipeline 디렉토리에서
+mkdir -p ~/.claude/commands
+cp .claude/commands/*.md ~/.claude/commands/
+```
+
+**새 프로젝트 생성시**
+```bash
+# 1. 프로젝트 디렉토리 생성
+mkdir ~/projects/my-awesome-app
+cd ~/projects/my-awesome-app
+
+# 2. 바로 개발 시작!
+claude /basic-development "요구사항 설명"
+```
+
+### 🗂️ 프로젝트 구조 관리
+
+**개별 프로젝트용 디렉토리**
+```
+~/projects/
+├── todo-app/          # claude /basic-development "TODO 앱"
+├── ecommerce-api/     # claude /microservices-development "이커머스"
+├── data-pipeline/     # claude /data-pipeline "로그 분석"
+└── mobile-app/        # claude /mobile-app "피트니스 앱"
+```
+
+**팀 프로젝트 공유**
+```bash
+# 프로젝트별 명령어 포함
+mkdir -p my-team-project/.claude/commands
+cp ~/.claude/commands/basic-development.md my-team-project/.claude/commands/
+git add .claude/
+git commit -m "Add project-specific Claude commands"
+```
+
 ## 🎛️ 고급 기능
 
 ### 🔧 커스터마이징
@@ -210,9 +259,9 @@ claude /microservices-development "기존 모놀리스를 마이크로서비스�
 복잡한 개발 과정을 여러 워크플로우로 분할 실행:
 ```bash
 # 단계별 실행
-claude -f workflows/basic-development.md && \
-claude -f workflows/security-audit.md && \
-claude -f workflows/performance-optimization.md
+claude /basic-development "앱 요구사항" && \
+claude /security-audit "보안 감사 실행" && \
+claude /performance-optimization "성능 최적화"
 ```
 
 ### 📊 실시간 모니터링

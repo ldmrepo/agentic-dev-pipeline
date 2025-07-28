@@ -21,9 +21,19 @@ cd agentic-dev-pipeline
 # 환경 변수 설정
 cp .env.example .env
 # .env 파일을 열어 ANTHROPIC_API_KEY 설정
+
+# 명령어를 사용자 레벨로 설정 (한 번만)
+mkdir -p ~/.claude/commands
+cp .claude/commands/*.md ~/.claude/commands/
 ```
 
 ## 🔥 2단계: 첫 번째 앱 만들기 (3분)
+
+### 프로젝트 디렉토리 생성
+```bash
+mkdir ~/projects/my-first-app
+cd ~/projects/my-first-app
+```
 
 ### 옵션 1: TODO 애플리케이션
 ```bash
