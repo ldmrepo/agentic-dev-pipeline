@@ -1,0 +1,240 @@
+# 성능 최적화 전문 에이전트 설정
+
+agent:
+  name: "Performance Optimization Agent"
+  version: "1.0.0"
+  description: "코드, 데이터베이스, 인프라 전반의 성능 최적화를 담당하는 전문 AI 에이전트"
+  type: "specialized"
+  
+capabilities:
+  - code_profiling
+  - performance_analysis
+  - optimization_recommendations
+  - automated_optimization
+  - load_testing
+  - bottleneck_detection
+  - resource_optimization
+  - caching_strategies
+
+tools:
+  profiling:
+    - name: "cProfile"
+      language: "python"
+      description: "Python 코드 프로파일링"
+    
+    - name: "pprof"
+      language: "go"
+      description: "Go 코드 프로파일링"
+    
+    - name: "Chrome DevTools"
+      language: "javascript"
+      description: "프론트엔드 성능 분석"
+    
+    - name: "JProfiler"
+      language: "java"
+      description: "Java 애플리케이션 프로파일링"
+  
+  monitoring:
+    - name: "Prometheus"
+      type: "metrics"
+      description: "시스템 메트릭 수집"
+    
+    - name: "Grafana"
+      type: "visualization"
+      description: "성능 메트릭 시각화"
+    
+    - name: "New Relic"
+      type: "apm"
+      description: "애플리케이션 성능 모니터링"
+    
+    - name: "Datadog"
+      type: "infrastructure"
+      description: "인프라 모니터링"
+  
+  load_testing:
+    - name: "k6"
+      description: "현대적인 부하 테스트 도구"
+    
+    - name: "Apache JMeter"
+      description: "포괄적인 성능 테스트"
+    
+    - name: "Gatling"
+      description: "고성능 부하 테스트"
+    
+    - name: "Locust"
+      description: "Python 기반 부하 테스트"
+  
+  database:
+    - name: "pg_stat_statements"
+      database: "postgresql"
+      description: "PostgreSQL 쿼리 분석"
+    
+    - name: "EXPLAIN ANALYZE"
+      database: "all"
+      description: "쿼리 실행 계획 분석"
+    
+    - name: "Redis Benchmark"
+      database: "redis"
+      description: "Redis 성능 벤치마크"
+
+optimization_strategies:
+  code_level:
+    - algorithm_optimization:
+        description: "더 효율적인 알고리즘으로 교체"
+        techniques:
+          - "시간 복잡도 개선"
+          - "공간 복잡도 최적화"
+          - "데이터 구조 최적화"
+    
+    - parallel_processing:
+        description: "병렬 처리 적용"
+        techniques:
+          - "멀티스레딩"
+          - "비동기 프로그래밍"
+          - "GPU 가속"
+          - "분산 처리"
+    
+    - memory_optimization:
+        description: "메모리 사용 최적화"
+        techniques:
+          - "메모리 풀링"
+          - "객체 재사용"
+          - "가비지 컬렉션 튜닝"
+          - "메모리 누수 제거"
+  
+  database_level:
+    - query_optimization:
+        description: "데이터베이스 쿼리 최적화"
+        techniques:
+          - "인덱스 최적화"
+          - "쿼리 리팩토링"
+          - "배치 처리"
+          - "커넥션 풀링"
+    
+    - schema_optimization:
+        description: "데이터베이스 스키마 최적화"
+        techniques:
+          - "정규화/비정규화"
+          - "파티셔닝"
+          - "샤딩"
+          - "읽기 전용 복제본"
+  
+  infrastructure_level:
+    - caching:
+        description: "캐싱 전략 구현"
+        layers:
+          - "CDN 캐싱"
+          - "애플리케이션 캐싱"
+          - "데이터베이스 캐싱"
+          - "브라우저 캐싱"
+    
+    - auto_scaling:
+        description: "자동 스케일링 구성"
+        strategies:
+          - "수평 스케일링"
+          - "수직 스케일링"
+          - "예측 기반 스케일링"
+    
+    - resource_optimization:
+        description: "리소스 사용 최적화"
+        areas:
+          - "CPU 최적화"
+          - "메모리 최적화"
+          - "네트워크 최적화"
+          - "스토리지 최적화"
+
+performance_metrics:
+  response_time:
+    - p50: "< 100ms"
+    - p95: "< 200ms"
+    - p99: "< 500ms"
+  
+  throughput:
+    - requests_per_second: "> 1000"
+    - concurrent_users: "> 10000"
+  
+  resource_utilization:
+    - cpu_usage: "< 70%"
+    - memory_usage: "< 80%"
+    - disk_io: "< 85%"
+  
+  error_rate:
+    - http_errors: "< 0.1%"
+    - timeout_errors: "< 0.05%"
+
+workflow:
+  analysis_phase:
+    duration: "30 minutes"
+    steps:
+      - collect_metrics
+      - identify_bottlenecks
+      - profile_application
+      - analyze_dependencies
+  
+  optimization_phase:
+    duration: "1-2 hours"
+    steps:
+      - prioritize_issues
+      - implement_optimizations
+      - validate_improvements
+      - document_changes
+  
+  validation_phase:
+    duration: "30 minutes"
+    steps:
+      - run_load_tests
+      - compare_metrics
+      - verify_stability
+      - generate_report
+
+reporting:
+  performance_report:
+    sections:
+      - executive_summary
+      - bottleneck_analysis
+      - optimization_recommendations
+      - implementation_results
+      - before_after_comparison
+      - next_steps
+  
+  metrics_dashboard:
+    widgets:
+      - response_time_graph
+      - throughput_chart
+      - resource_utilization
+      - error_rate_trends
+      - cost_optimization
+
+integration:
+  ci_cd:
+    - performance_gates:
+        description: "CI/CD 파이프라인에 성능 검증 추가"
+        checks:
+          - "응답 시간 임계값"
+          - "메모리 사용량 제한"
+          - "CPU 사용률 체크"
+  
+  monitoring:
+    - real_time_alerts:
+        description: "실시간 성능 알림"
+        triggers:
+          - "응답 시간 증가"
+          - "에러율 상승"
+          - "리소스 포화"
+  
+  auto_remediation:
+    - self_healing:
+        description: "자동 복구 메커니즘"
+        actions:
+          - "자동 스케일링"
+          - "캐시 무효화"
+          - "서비스 재시작"
+          - "트래픽 라우팅"
+
+best_practices:
+  - "성능 목표를 명확히 정의"
+  - "측정 가능한 메트릭 설정"
+  - "점진적 최적화 접근"
+  - "모니터링 우선"
+  - "비용 대비 효과 고려"
+  - "사용자 경험 중심 최적화"

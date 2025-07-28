@@ -1,0 +1,294 @@
+# 보안 감사 전문 에이전트 설정
+
+agent:
+  name: "Security Audit Agent"
+  version: "1.0.0"
+  description: "애플리케이션, 인프라, 코드의 보안 취약점을 탐지하고 수정하는 전문 AI 에이전트"
+  type: "specialized"
+  
+capabilities:
+  - vulnerability_scanning
+  - code_security_analysis
+  - dependency_audit
+  - penetration_testing
+  - compliance_checking
+  - security_best_practices
+  - threat_modeling
+  - incident_response
+
+security_frameworks:
+  - OWASP_Top_10
+  - CWE_Top_25
+  - NIST_Cybersecurity_Framework
+  - ISO_27001
+  - PCI_DSS
+  - GDPR
+  - HIPAA
+  - SOC2
+
+tools:
+  static_analysis:
+    - name: "Bandit"
+      language: "python"
+      description: "Python 코드 보안 취약점 스캔"
+      checks:
+        - "하드코딩된 비밀번호"
+        - "SQL 인젝션"
+        - "안전하지 않은 난수 생성"
+    
+    - name: "ESLint Security Plugin"
+      language: "javascript"
+      description: "JavaScript 보안 규칙 검사"
+      
+    - name: "Gosec"
+      language: "go"
+      description: "Go 코드 보안 분석"
+    
+    - name: "SpotBugs"
+      language: "java"
+      description: "Java 보안 버그 탐지"
+    
+    - name: "Semgrep"
+      language: "multi"
+      description: "다중 언어 보안 패턴 매칭"
+  
+  dynamic_analysis:
+    - name: "OWASP ZAP"
+      type: "DAST"
+      description: "동적 애플리케이션 보안 테스트"
+      
+    - name: "Burp Suite"
+      type: "web_scanner"
+      description: "웹 애플리케이션 취약점 스캔"
+    
+    - name: "SQLMap"
+      type: "sql_injection"
+      description: "SQL 인젝션 자동 탐지 및 공격"
+    
+    - name: "Nikto"
+      type: "web_server"
+      description: "웹 서버 취약점 스캔"
+  
+  dependency_scanning:
+    - name: "Snyk"
+      description: "오픈소스 의존성 취약점 검사"
+      
+    - name: "npm audit"
+      language: "javascript"
+      description: "NPM 패키지 보안 감사"
+    
+    - name: "pip-audit"
+      language: "python"
+      description: "Python 패키지 취약점 검사"
+    
+    - name: "OWASP Dependency Check"
+      language: "multi"
+      description: "다중 언어 의존성 취약점 분석"
+  
+  infrastructure:
+    - name: "Trivy"
+      type: "container"
+      description: "컨테이너 이미지 취약점 스캔"
+      
+    - name: "Checkov"
+      type: "IaC"
+      description: "Infrastructure as Code 보안 검사"
+    
+    - name: "Prowler"
+      type: "cloud"
+      description: "AWS 보안 모범 사례 검사"
+    
+    - name: "kube-bench"
+      type: "kubernetes"
+      description: "Kubernetes 보안 벤치마크"
+
+vulnerability_categories:
+  injection:
+    - sql_injection
+    - command_injection
+    - ldap_injection
+    - xpath_injection
+    - template_injection
+    
+  authentication:
+    - weak_passwords
+    - default_credentials
+    - broken_authentication
+    - session_management
+    
+  exposure:
+    - sensitive_data_exposure
+    - security_misconfiguration
+    - excessive_data_exposure
+    - missing_encryption
+    
+  access_control:
+    - broken_access_control
+    - privilege_escalation
+    - insecure_direct_object_references
+    
+  cryptography:
+    - weak_encryption
+    - insecure_random_values
+    - hardcoded_keys
+    - certificate_validation
+
+severity_levels:
+  critical:
+    description: "즉각적인 조치 필요"
+    sla: "24시간 이내"
+    examples:
+      - "원격 코드 실행"
+      - "인증 우회"
+      - "데이터베이스 노출"
+  
+  high:
+    description: "빠른 조치 필요"
+    sla: "1주일 이내"
+    examples:
+      - "SQL 인젝션"
+      - "XSS"
+      - "민감정보 노출"
+  
+  medium:
+    description: "계획된 수정 필요"
+    sla: "1개월 이내"
+    examples:
+      - "세션 고정"
+      - "약한 암호화"
+      - "정보 누출"
+  
+  low:
+    description: "개선 권장"
+    sla: "3개월 이내"
+    examples:
+      - "보안 헤더 누락"
+      - "상세 에러 메시지"
+      - "오래된 라이브러리"
+
+remediation_strategies:
+  input_validation:
+    description: "모든 입력값 검증 및 삭제"
+    implementation:
+      - "화이트리스트 기반 검증"
+      - "파라미터화된 쿼리 사용"
+      - "이스케이프 처리"
+  
+  authentication_hardening:
+    description: "인증 메커니즘 강화"
+    implementation:
+      - "다중 인증 (MFA) 구현"
+      - "강력한 패스워드 정책"
+      - "계정 잠금 메커니즘"
+  
+  encryption:
+    description: "데이터 암호화"
+    implementation:
+      - "전송 중 암호화 (TLS)"
+      - "저장 시 암호화"
+      - "키 관리 시스템 사용"
+  
+  access_control:
+    description: "접근 제어 강화"
+    implementation:
+      - "최소 권한 원칙"
+      - "역할 기반 접근 제어 (RBAC)"
+      - "API 레이트 리미팅"
+
+compliance_requirements:
+  data_protection:
+    - personal_data_encryption
+    - data_retention_policies
+    - right_to_be_forgotten
+    - data_portability
+  
+  audit_logging:
+    - security_event_logging
+    - log_retention
+    - log_integrity
+    - monitoring_alerts
+  
+  incident_response:
+    - incident_response_plan
+    - breach_notification
+    - forensics_capability
+    - recovery_procedures
+
+workflow:
+  discovery_phase:
+    duration: "30 minutes"
+    steps:
+      - asset_inventory
+      - technology_stack_analysis
+      - threat_modeling
+      - compliance_requirements_mapping
+  
+  scanning_phase:
+    duration: "1-2 hours"
+    steps:
+      - static_code_analysis
+      - dependency_scanning
+      - dynamic_testing
+      - infrastructure_scanning
+  
+  analysis_phase:
+    duration: "1 hour"
+    steps:
+      - vulnerability_correlation
+      - false_positive_reduction
+      - risk_assessment
+      - prioritization
+  
+  remediation_phase:
+    duration: "2-4 hours"
+    steps:
+      - fix_generation
+      - security_patch_application
+      - configuration_hardening
+      - validation_testing
+
+reporting:
+  executive_summary:
+    - risk_score
+    - critical_findings_count
+    - compliance_status
+    - remediation_timeline
+  
+  technical_report:
+    - vulnerability_details
+    - proof_of_concept
+    - remediation_steps
+    - verification_methods
+  
+  compliance_report:
+    - framework_mapping
+    - gap_analysis
+    - remediation_plan
+    - attestation_requirements
+
+automation:
+  continuous_scanning:
+    - pre_commit_hooks
+    - ci_cd_integration
+    - scheduled_scans
+    - real_time_monitoring
+  
+  auto_remediation:
+    - dependency_updates
+    - configuration_fixes
+    - security_patches
+    - certificate_renewal
+  
+  alert_management:
+    - severity_based_routing
+    - deduplication
+    - correlation
+    - escalation
+
+best_practices:
+  - "Security by Design 원칙 적용"
+  - "Defense in Depth 전략 구현"
+  - "정기적인 보안 교육 실시"
+  - "제로 트러스트 아키텍처 채택"
+  - "보안 챔피언 프로그램 운영"
+  - "Bug Bounty 프로그램 고려"

@@ -1,0 +1,186 @@
+groups:
+- name: agentic-pipeline-alerts
+  rules:
+  # 파이프라인 실행 실패 알림
+  - alert: PipelineExecutionFailure
+    expr: pipeline_execution_success_rate < 0.9
+    for: 5m
+    labels:
+      severity: critical
+      component: pipeline
+    annotations:
+      summary: "파이프라인 실행 성공률이 90% 미만입니다"
+      description: "지난 5분간 파이프라인 실행 성공률이 {{ $value }}%로 떨어졌습니다."
+
+  # 에이전트 응답 시간 지연
+  - alert: AgentResponseTimeHigh
+    expr: avg(agent_response_time_seconds) > 30
+    for: 2m
+    labels:
+      severity: warning
+      component: agent
+    annotations:
+      summary: "AI 에이전트 응답 시간이 30초를 초과했습니다"
+      description: "평균 에이전트 응답 시간: {{ $value }}초"
+
+  # 코드 품질 게이트 실패
+  - alert: QualityGateFailure
+    expr: quality_gate_pass_rate < 1.0
+    for: 1m
+    labels:
+      severity: high
+      component: quality
+    annotations:
+      summary: "품질 게이트 통과율이 100% 미만입니다"
+      description: "품질 게이트 통과율: {{ $value }}%"
+
+  # API 응답 시간 증가
+  - alert: APIResponseTimeHigh
+    expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+    for: 2m
+    labels:
+      severity: warning
+      component: api
+    annotations:
+      summary: "API 응답 시간이 증가했습니다"
+      description: "95% 백분위 응답 시간: {{ $value }}초"
+
+  # 에러율 증가
+  - alert: ErrorRateHigh
+    expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+    for: 1m
+    labels:
+      severity: critical
+      component: api
+    annotations:
+      summary: "에러율이 5%를 초과했습니다"
+      description: "현재 에러율: {{ $value }}%"
+
+- name: system-alerts
+  rules:
+  # CPU 사용률 높음
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+      component: system
+    annotations:
+      summary: "CPU 사용률이 80%를 초과했습니다"
+      description: "인스턴스 {{ $labels.instance }}의 CPU 사용률: {{ $value }}%"
+
+  # 메모리 사용률 높음
+  - alert: HighMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+    for: 5m
+    labels:
+      severity: warning
+      component: system
+    annotations:
+      summary: "메모리 사용률이 85%를 초과했습니다"
+      description: "인스턴스 {{ $labels.instance }}의 메모리 사용률: {{ $value }}%"
+
+  # 디스크 공간 부족
+  - alert: DiskSpaceLow
+    expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 90
+    for: 5m
+    labels:
+      severity: critical
+      component: system
+    annotations:
+      summary: "디스크 공간이 부족합니다"
+      description: "{{ $labels.instance }}의 {{ $labels.mountpoint }} 사용률: {{ $value }}%"
+
+- name: application-alerts
+  rules:
+  # 데이터베이스 연결 실패
+  - alert: DatabaseConnectionFailure
+    expr: up{job="postgres"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      component: database
+    annotations:
+      summary: "데이터베이스 연결이 실패했습니다"
+      description: "PostgreSQL 데이터베이스에 연결할 수 없습니다"
+
+  # Redis 연결 실패
+  - alert: RedisConnectionFailure
+    expr: up{job="redis"} == 0
+    for: 1m
+    labels:
+      severity: high
+      component: cache
+    annotations:
+      summary: "Redis 캐시 서버 연결이 실패했습니다"
+      description: "Redis 서버에 연결할 수 없습니다"
+
+  # 컨테이너 재시작 빈번
+  - alert: ContainerRestartingFrequently
+    expr: rate(container_start_time_seconds[15m]) > 0.1
+    for: 5m
+    labels:
+      severity: warning
+      component: container
+    annotations:
+      summary: "컨테이너가 자주 재시작되고 있습니다"
+      description: "{{ $labels.name }} 컨테이너가 15분간 {{ $value }}회 재시작되었습니다"
+
+- name: business-alerts
+  rules:
+  # 사용자 전환율 감소
+  - alert: ConversionRateDropped
+    expr: (conversion_rate / conversion_rate offset 1d) < 0.8
+    for: 10m
+    labels:
+      severity: high
+      component: business
+    annotations:
+      summary: "사용자 전환율이 20% 이상 감소했습니다"
+      description: "현재 전환율: {{ $value }}% (어제 대비)"
+
+  # 배포 실패
+  - alert: DeploymentFailure
+    expr: deployment_success_rate < 1.0
+    for: 1m
+    labels:
+      severity: critical
+      component: deployment
+    annotations:
+      summary: "배포가 실패했습니다"
+      description: "배포 성공률: {{ $value }}%"
+
+  # 테스트 커버리지 감소
+  - alert: TestCoverageDecreased
+    expr: test_coverage_percentage < 85
+    for: 5m
+    labels:
+      severity: warning
+      component: quality
+    annotations:
+      summary: "테스트 커버리지가 85% 미만입니다"
+      description: "현재 테스트 커버리지: {{ $value }}%"
+
+- name: security-alerts
+  rules:
+  # 보안 취약점 발견
+  - alert: SecurityVulnerabilityFound
+    expr: security_vulnerabilities_high + security_vulnerabilities_critical > 0
+    for: 1m
+    labels:
+      severity: critical
+      component: security
+    annotations:
+      summary: "높은 위험도의 보안 취약점이 발견되었습니다"
+      description: "Critical: {{ $labels.critical }}, High: {{ $labels.high }}"
+
+  # 비정상적인 로그인 시도
+  - alert: AbnormalLoginAttempts
+    expr: rate(failed_login_attempts_total[5m]) > 10
+    for: 2m
+    labels:
+      severity: warning
+      component: security
+    annotations:
+      summary: "비정상적인 로그인 시도가 감지되었습니다"
+      description: "5분간 실패한 로그인 시도: {{ $value }}회"

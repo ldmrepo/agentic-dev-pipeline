@@ -1,0 +1,65 @@
+# Project Templates
+
+## Web Application Template
+web_app:
+  name: "Modern Web Application"
+  description: "React + Node.js 풀스택 웹 애플리케이션"
+  
+  structure:
+    frontend:
+      framework: "React 18 + TypeScript"
+      styling: "Tailwind CSS"
+      state_management: "Redux Toolkit"
+      routing: "React Router v6"
+      testing: "Jest + React Testing Library"
+      
+    backend:
+      framework: "Express.js + TypeScript"
+      database: "PostgreSQL"
+      cache: "Redis"
+      auth: "JWT + Passport"
+      testing: "Jest + Supertest"
+      
+    infrastructure:
+      containerization: "Docker + Docker Compose"
+      orchestration: "Kubernetes"
+      ci_cd: "GitHub Actions"
+      monitoring: "Prometheus + Grafana"
+
+## Microservices Template
+microservices:
+  name: "Microservices Architecture"
+  description: "마이크로서비스 기반 분산 시스템"
+  
+  structure:
+    services:
+      - name: "user-service"
+        port: 3001
+        database: "PostgreSQL"
+      - name: "order-service"
+        port: 3002
+        database: "MongoDB"
+      - name: "payment-service"
+        port: 3003
+        database: "PostgreSQL"
+      - name: "notification-service"
+        port: 3004
+        queue: "Redis"
+        
+    shared:
+      api_gateway: "Kong"
+      service_mesh: "Istio"
+      message_broker: "Apache Kafka"
+      monitoring: "Jaeger + Prometheus"
+
+## API Service Template
+api_service:
+  name: "REST API Service"
+  description: "RESTful API 마이크로서비스"
+  
+  structure:
+    framework: "FastAPI (Python) 또는 Express.js (Node.js)"
+    database: "PostgreSQL"
+    documentation: "OpenAPI 3.0"
+    testing: "pytest 또는 Jest"
+    deployment: "Docker + Kubernetes"

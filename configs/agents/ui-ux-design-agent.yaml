@@ -1,0 +1,305 @@
+# UI/UX 디자인 에이전트 설정
+
+agent:
+  name: "UI/UX Design Agent"
+  version: "1.0.0"
+  description: "사용자 인터페이스와 경험을 분석하고 개선하는 전문 AI 에이전트"
+  type: "specialized"
+
+capabilities:
+  - design_system_creation
+  - accessibility_analysis
+  - responsive_design
+  - user_flow_optimization
+  - color_scheme_generation
+  - typography_selection
+  - component_design
+  - usability_testing
+  - design_consistency_check
+  - performance_optimization
+
+design_principles:
+  - user_centered_design
+  - accessibility_first
+  - mobile_first
+  - progressive_enhancement
+  - visual_hierarchy
+  - consistency
+  - simplicity
+  - feedback_and_response
+
+tools:
+  analysis:
+    - name: "Lighthouse"
+      type: "accessibility_performance"
+      description: "웹 페이지 품질 분석"
+      metrics:
+        - "접근성 점수"
+        - "성능 점수"
+        - "SEO 점수"
+        - "모범 사례"
+    
+    - name: "axe DevTools"
+      type: "accessibility"
+      description: "접근성 자동 테스트"
+      
+    - name: "Wave"
+      type: "accessibility"
+      description: "웹 접근성 평가 도구"
+    
+    - name: "Contrast Checker"
+      type: "color_analysis"
+      description: "색상 대비 검증"
+  
+  design_generation:
+    - name: "Color Theory"
+      type: "color_scheme"
+      description: "색상 팔레트 생성"
+      
+    - name: "Typography Scale"
+      type: "typography"
+      description: "타이포그래피 시스템 생성"
+    
+    - name: "Grid System"
+      type: "layout"
+      description: "반응형 그리드 생성"
+    
+    - name: "Component Library"
+      type: "components"
+      description: "재사용 가능한 컴포넌트 설계"
+  
+  user_testing:
+    - name: "Heatmap Analysis"
+      type: "user_behavior"
+      description: "사용자 클릭/스크롤 패턴 분석"
+      
+    - name: "A/B Testing"
+      type: "conversion_optimization"
+      description: "디자인 변형 테스트"
+    
+    - name: "User Flow Analysis"
+      type: "journey_mapping"
+      description: "사용자 여정 분석"
+
+design_patterns:
+  navigation:
+    - top_navigation
+    - side_navigation
+    - breadcrumbs
+    - pagination
+    - infinite_scroll
+    
+  forms:
+    - inline_validation
+    - progressive_disclosure
+    - smart_defaults
+    - clear_labels
+    - error_handling
+    
+  feedback:
+    - loading_states
+    - success_messages
+    - error_states
+    - empty_states
+    - tooltips
+    
+  layout:
+    - card_layout
+    - grid_system
+    - hero_sections
+    - split_screen
+    - asymmetric_layout
+
+accessibility_standards:
+  wcag_2_1:
+    level_a:
+      - "이미지 대체 텍스트"
+      - "키보드 접근성"
+      - "페이지 언어 명시"
+      - "의미있는 순서"
+    
+    level_aa:
+      - "색상 대비 4.5:1"
+      - "텍스트 크기 조절"
+      - "포커스 표시"
+      - "일관된 네비게이션"
+    
+    level_aaa:
+      - "색상 대비 7:1"
+      - "수화 통역"
+      - "상세한 도움말"
+      - "읽기 수준"
+  
+  aria:
+    - roles
+    - properties
+    - states
+    - landmarks
+
+color_theory:
+  schemes:
+    - monochromatic
+    - analogous
+    - complementary
+    - triadic
+    - tetradic
+    
+  psychology:
+    red: "에너지, 긴급, 열정"
+    blue: "신뢰, 안정, 전문성"
+    green: "성장, 자연, 성공"
+    yellow: "주의, 낙관, 창의성"
+    purple: "럭셔리, 창의성, 신비"
+    orange: "친근함, 활력, 재미"
+    black: "우아함, 권위, 정교함"
+    white: "순수, 간결, 공간"
+
+typography:
+  font_categories:
+    - serif: "전통적, 신뢰성, 가독성"
+    - sans_serif: "현대적, 깔끔함, 디지털"
+    - display: "개성, 브랜딩, 헤드라인"
+    - monospace: "기술적, 코드, 정확성"
+  
+  hierarchy:
+    - h1: "2.5-3rem"
+    - h2: "2-2.5rem"
+    - h3: "1.5-2rem"
+    - h4: "1.25-1.5rem"
+    - body: "1rem"
+    - caption: "0.875rem"
+  
+  line_height:
+    - headings: "1.2-1.3"
+    - body: "1.5-1.6"
+    - small: "1.4-1.5"
+
+responsive_breakpoints:
+  mobile_first:
+    - xs: "0-575px"
+    - sm: "576-767px"
+    - md: "768-991px"
+    - lg: "992-1199px"
+    - xl: "1200px+"
+  
+  common_devices:
+    - iphone_se: "375x667"
+    - iphone_12: "390x844"
+    - ipad: "768x1024"
+    - desktop_hd: "1920x1080"
+    - desktop_4k: "3840x2160"
+
+performance_metrics:
+  loading:
+    - first_contentful_paint: "< 1.8s"
+    - speed_index: "< 3.4s"
+    - largest_contentful_paint: "< 2.5s"
+    - time_to_interactive: "< 3.8s"
+    - total_blocking_time: "< 200ms"
+    - cumulative_layout_shift: "< 0.1"
+  
+  optimization:
+    - image_optimization
+    - lazy_loading
+    - code_splitting
+    - css_minimization
+    - font_optimization
+
+workflow:
+  analysis_phase:
+    duration: "30 minutes"
+    steps:
+      - current_design_audit
+      - user_flow_mapping
+      - accessibility_check
+      - performance_analysis
+      - competitor_analysis
+  
+  design_phase:
+    duration: "1-2 hours"
+    steps:
+      - design_system_creation
+      - wireframe_generation
+      - color_palette_selection
+      - typography_definition
+      - component_design
+  
+  implementation_phase:
+    duration: "2-3 hours"
+    steps:
+      - css_framework_setup
+      - component_development
+      - responsive_implementation
+      - accessibility_features
+      - performance_optimization
+  
+  testing_phase:
+    duration: "30 minutes"
+    steps:
+      - cross_browser_testing
+      - device_testing
+      - accessibility_validation
+      - user_testing
+      - performance_verification
+
+reporting:
+  design_audit_report:
+    sections:
+      - executive_summary
+      - current_state_analysis
+      - accessibility_issues
+      - performance_metrics
+      - improvement_recommendations
+  
+  design_system_documentation:
+    sections:
+      - color_palette
+      - typography_scale
+      - spacing_system
+      - component_library
+      - usage_guidelines
+  
+  usability_report:
+    sections:
+      - user_flow_analysis
+      - pain_points
+      - conversion_metrics
+      - a_b_test_results
+      - recommendations
+
+integration:
+  frameworks:
+    css:
+      - tailwind_css
+      - bootstrap
+      - material_ui
+      - ant_design
+      - chakra_ui
+    
+    javascript:
+      - react
+      - vue
+      - angular
+      - svelte
+      - solid
+  
+  build_tools:
+    - webpack
+    - vite
+    - parcel
+    - rollup
+    - esbuild
+  
+  version_control:
+    - design_tokens
+    - component_versioning
+    - style_guide_updates
+
+best_practices:
+  - "사용자 중심 디자인 프로세스 준수"
+  - "접근성을 디자인 초기부터 고려"
+  - "일관된 디자인 시스템 구축"
+  - "성능과 미학의 균형 유지"
+  - "반복적인 사용자 테스트"
+  - "데이터 기반 디자인 결정"
+  - "크로스 플랫폼 일관성 유지"
