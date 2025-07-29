@@ -1,0 +1,212 @@
+name: CD
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  DOCKER_REGISTRY: docker.io
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/agentic-dev-pipeline
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging' || github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name staging-cluster
+      
+      - name: Deploy to Kubernetes
+        run: |
+          # Update image tag in k8s manifests
+          export IMAGE_TAG=${GITHUB_SHA::8}
+          envsubst < k8s/staging/deployment.yaml | kubectl apply -f -
+          
+          # Wait for rollout to complete
+          kubectl rollout status deployment/agentic-dev-pipeline -n staging --timeout=10m
+      
+      - name: Run smoke tests
+        run: |
+          # Wait for service to be ready
+          sleep 30
+          
+          # Run health check
+          STAGING_URL=$(kubectl get service agentic-dev-pipeline -n staging -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          curl -f http://$STAGING_URL/health || exit 1
+      
+      - name: Notify Slack
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            Staging Deployment ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production' || startsWith(github.ref, 'refs/tags/')
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: ${{ secrets.AWS_REGION_PROD }}
+      
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ secrets.AWS_REGION_PROD }} --name production-cluster
+      
+      - name: Blue-Green Deployment
+        run: |
+          # Create new deployment (green)
+          export IMAGE_TAG=${GITHUB_REF#refs/tags/}
+          export DEPLOYMENT_NAME=agentic-dev-pipeline-green
+          
+          # Deploy green version
+          envsubst < k8s/production/deployment-green.yaml | kubectl apply -f -
+          
+          # Wait for green deployment to be ready
+          kubectl rollout status deployment/$DEPLOYMENT_NAME -n production --timeout=10m
+          
+          # Run health checks on green deployment
+          GREEN_POD=$(kubectl get pod -n production -l app=agentic-dev-pipeline,version=green -o jsonpath="{.items[0].metadata.name}")
+          kubectl exec -n production $GREEN_POD -- curl -f http://localhost:8000/health || exit 1
+          
+          # Switch traffic to green
+          kubectl patch service agentic-dev-pipeline -n production -p '{"spec":{"selector":{"version":"green"}}}'
+          
+          # Wait and monitor
+          sleep 60
+          
+          # If everything is fine, remove blue deployment
+          kubectl delete deployment agentic-dev-pipeline-blue -n production --ignore-not-found=true
+          
+          # Rename green to blue for next deployment
+          kubectl patch deployment $DEPLOYMENT_NAME -n production -p '{"metadata":{"name":"agentic-dev-pipeline-blue"}}'
+      
+      - name: Run E2E tests
+        run: |
+          # Run comprehensive E2E tests against production
+          PROD_URL=$(kubectl get service agentic-dev-pipeline -n production -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          npm run test:e2e -- --url=https://$PROD_URL
+      
+      - name: Update monitoring
+        run: |
+          # Update Grafana dashboards
+          curl -X POST https://grafana.example.com/api/dashboards/db \
+            -H "Authorization: Bearer ${{ secrets.GRAFANA_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d @monitoring/grafana/dashboards/production.json
+      
+      - name: Create deployment annotation
+        run: |
+          # Annotate deployment in monitoring systems
+          curl -X POST https://api.datadoghq.com/api/v1/events \
+            -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "title": "Production Deployment",
+              "text": "Deployed version ${{ github.ref }} to production",
+              "tags": ["deployment", "production", "version:${{ github.ref }}"]
+            }'
+      
+      - name: Notify Slack
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            Production Deployment ${{ job.status }}
+            Version: ${{ github.ref }}
+            Author: ${{ github.actor }}
+            Environment: Production
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  rollback:
+    name: Rollback Production
+    runs-on: ubuntu-latest
+    if: failure() && github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    needs: deploy-production
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: ${{ secrets.AWS_REGION_PROD }}
+      
+      - name: Rollback to previous version
+        run: |
+          # Switch traffic back to blue
+          kubectl patch service agentic-dev-pipeline -n production -p '{"spec":{"selector":{"version":"blue"}}}'
+          
+          # Delete failed green deployment
+          kubectl delete deployment agentic-dev-pipeline-green -n production --ignore-not-found=true
+      
+      - name: Notify Slack
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              text: "⚠️ Production deployment rolled back!",
+              attachments: [{
+                color: 'warning',
+                text: 'Deployment failed and was automatically rolled back to the previous version.'
+              }]
+            }
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

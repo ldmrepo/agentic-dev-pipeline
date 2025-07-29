@@ -6,21 +6,20 @@ services:
     image: postgres:15-alpine
     container_name: agentic-postgres
     environment:
-      POSTGRES_DB: agentic_dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agentic_dev_pipeline
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - agentic-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - agentic-network
 
   # Redis 캐시
   redis:
@@ -30,14 +29,62 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    networks:
+      - agentic-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ChromaDB 벡터 저장소
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: agentic-chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
     networks:
       - agentic-network
+
+  # 메인 애플리케이션
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic-app
+    environment:
+      - AGENTIC_ENV=development
+      - AGENTIC_POSTGRES_HOST=postgres
+      - AGENTIC_POSTGRES_PORT=5432
+      - AGENTIC_POSTGRES_USER=postgres
+      - AGENTIC_POSTGRES_PASSWORD=postgres
+      - AGENTIC_POSTGRES_DB=agentic_dev_pipeline
+      - AGENTIC_REDIS_HOST=redis
+      - AGENTIC_REDIS_PORT=6379
+      - AGENTIC_CHROMA_HOST=chromadb
+      - AGENTIC_CHROMA_PORT=8000
+      - AGENTIC_ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./configs:/app/configs
+      - ./.claude:/app/.claude
+      - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      chromadb:
+        condition: service_started
+    networks:
+      - agentic-network
+    restart: unless-stopped
 
   # Prometheus 모니터링
   prometheus:
@@ -46,23 +93,15 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     networks:
       - agentic-network
+    depends_on:
+      - app
 
   # Grafana 대시보드
   grafana:
@@ -71,124 +110,24 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - agentic-network
     depends_on:
       - prometheus
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - agentic-network
-
-  # Elasticsearch (로깅)
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
-    container_name: agentic-elasticsearch
-    environment:
-      - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-      - xpack.security.enabled=false
-      - xpack.security.enrollment.enabled=false
-    ports:
-      - "9200:9200"
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks:
-      - agentic-network
-
-  # Kibana (로그 시각화)
-  kibana:
-    image: docker.elastic.co/kibana/kibana:8.11.0
-    container_name: agentic-kibana
-    ports:
-      - "5601:5601"
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=kibana_system
-      - ELASTICSEARCH_PASSWORD=
-    depends_on:
-      - elasticsearch
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    networks:
-      - agentic-network
-
-  # Jaeger (분산 추적)
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: agentic-jaeger
-    ports:
-      - "16686:16686"
-      - "14268:14268"
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-    networks:
-      - agentic-network
-
-  # MinIO (S3 호환 객체 스토리지)
-  minio:
-    image: minio/minio:latest
-    container_name: agentic-minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-    volumes:
-      - minio_data:/data
-    command: server /data --console-address ":9001"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-    networks:
-      - agentic-network
-
-  # Mailhog (개발용 메일 서버)
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: agentic-mailhog
-    ports:
-      - "1025:1025"  # SMTP
-      - "8025:8025"  # Web UI
-    networks:
-      - agentic-network
 
 volumes:
   postgres_data:
-    driver: local
   redis_data:
-    driver: local
+  chroma_data:
   prometheus_data:
-    driver: local
   grafana_data:
-    driver: local
-  elasticsearch_data:
-    driver: local
-  minio_data:
-    driver: local
 
 networks:
   agentic-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
