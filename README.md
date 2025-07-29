@@ -18,7 +18,7 @@
 
 ## 🎯 프로젝트 개요
 
-에이전틱 개발 파이프라인은 Claude Code를 중심으로 한 AI 에이전트들이 협력하여 소프트웨어 개발 생명주기 전체를 자동화하는 혁신적인 개발 시스템입니다.
+에이전틱 개발 파이프라인은 LangGraph와 Claude API를 활용한 AI 에이전트들이 협력하여 소프트웨어 개발 생명주기 전체를 자동화하는 혁신적인 개발 시스템입니다.
 
 ### ✨ 핵심 가치 제안
 
@@ -34,16 +34,16 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                 오케스트레이션 계층                          │
-│              (Pipeline Orchestrator)                       │
+│              (LangGraph Workflow Engine)                   │
 ├─────────────────────────────────────────────────────────────┤
 │                   AI 에이전트 계층                          │
 │  📋 Planning │ 💻 Development │ 🧪 Testing │ 🚀 Deployment │ 📊 Monitoring │
 ├─────────────────────────────────────────────────────────────┤
 │                    도구 통합 계층                           │
-│  Claude Code │ Git │ Docker │ Kubernetes │ CI/CD │ MCP    │
+│  Claude API │ MCP Protocol │ Docker │ Kubernetes │ CI/CD  │
 ├─────────────────────────────────────────────────────────────┤
 │                   인프라 계층                              │
-│  Repository │ Container Registry │ Cloud Platform │ Monitoring │
+│  PostgreSQL │ Redis │ ChromaDB │ Prometheus │ Grafana    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -68,9 +68,10 @@
 ## 🚀 빠른 시작
 
 ### 전제 조건
-- Node.js 18+ 
-- Claude Code CLI
+- Python 3.11+
 - Docker & Docker Compose
+- PostgreSQL 15+
+- Redis 7+
 - Git
 
 ### 1단계: 프로젝트 설정
@@ -79,9 +80,12 @@
 git clone <your-repository-url>
 cd agentic-dev-pipeline
 
-# 자동 초기 설정 실행
-chmod +x scripts/setup.sh
-./scripts/setup.sh
+# 가상 환경 생성 및 활성화
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 의존성 설치
+pip install -r requirements.txt
 ```
 
 ### 2단계: 환경 구성
@@ -89,212 +93,263 @@ chmod +x scripts/setup.sh
 # 환경 변수 설정
 cp .env.example .env
 # .env 파일에서 다음 설정:
-# ANTHROPIC_API_KEY=your_anthropic_api_key_here
-# GITHUB_TOKEN=your_github_token_here
+# ANTHROPIC_API_KEY=your_anthropic_api_key_here  (필수!)
+# GITHUB_TOKEN=your_github_token_here  (선택)
 
-# Claude Code 인증
-claude auth login
-
-# 로컬 인프라 시작
+# Docker 서비스 시작
 docker-compose up -d
+
+# 데이터베이스 초기화
+alembic upgrade head
 ```
 
-### 3단계: 명령어 설정 (한 번만)
+### 3단계: API 서버 실행
 ```bash
-# 방법 1: 사용자 레벨 명령어로 복사 (권장) ⭐
-mkdir -p ~/.claude/commands
-cp .claude/commands/*.md ~/.claude/commands/
-
-# 방법 2: 심볼릭 링크 생성
-ln -sf $(pwd)/.claude/commands ~/.claude/
+# 개발 서버 실행
+make run
+# 또는
+uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 4단계: 새 프로젝트 생성 및 실행
+API 문서 확인:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+- Health Check: http://localhost:8000/health
+- Metrics: http://localhost:8000/metrics
+
+### 4단계: 파이프라인 실행
 ```bash
-# 원하는 위치에 프로젝트 디렉토리 생성
-mkdir ~/projects/my-todo-app
-cd ~/projects/my-todo-app
+# API를 통한 파이프라인 생성
+curl -X POST http://localhost:8000/api/v1/pipelines \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My First Pipeline",
+    "type": "basic_development",
+    "config": {
+      "task": "TODO 애플리케이션 개발",
+      "requirements": "사용자 인증, CRUD 기능, 반응형 UI"
+    }
+  }'
 
-# 🎉 마법 같은 순간 - 전체 애플리케이션 자동 개발!
-claude /basic-development "사용자 인증과 프로필 관리가 있는 웹 애플리케이션"
+# 파이프라인 상태 확인
+curl http://localhost:8000/api/v1/pipelines/{pipeline_id}/status
 ```
 
-### 결과물 미리보기
-실행 완료 후 생성되는 완전한 애플리케이션:
-```
-my-web-app/
-├── 🎨 frontend/          # React + TypeScript 애플리케이션
-├── ⚙️ backend/           # Express.js API 서버  
-├── 🗄️ database/         # PostgreSQL 스키마
-├── 🐳 docker/           # 컨테이너 설정
-├── ☸️ k8s/              # Kubernetes 매니페스트
-├── 🧪 tests/            # 포괄적 테스트 슈트 (85%+ 커버리지)
-├── 📊 monitoring/       # Prometheus + Grafana 설정
-├── 🔄 .github/workflows/ # CI/CD 파이프라인
-└── 📚 docs/             # 자동 생성 문서
+### Python 클라이언트 사용
+```python
+from src.orchestration.engine import WorkflowEngine
+from src.orchestration.state import WorkflowState
+
+# 엔진 초기화
+engine = WorkflowEngine()
+
+# 파이프라인 실행
+state = WorkflowState(
+    task_type="development",
+    requirements="TODO 애플리케이션 개발",
+    config={"framework": "react", "backend": "fastapi"}
+)
+
+result = await engine.execute("main_workflow", state)
+print(f"Pipeline completed: {result}")
 ```
 
 ## 📋 주요 워크플로우
 
 ### 🔹 기본 개발 워크플로우 (2-4시간)
 완전한 웹 애플리케이션을 자동으로 개발합니다.
-```bash
-claude /basic-development "TODO 애플리케이션"
+```python
+from src.orchestration.engine import WorkflowEngine
+from src.orchestration.state import WorkflowState
+
+# 엔진 초기화
+engine = WorkflowEngine()
+
+# 파이프라인 실행
+state = WorkflowState(
+    task_type="development",
+    requirements="TODO 애플리케이션 개발",
+    config={"framework": "react", "backend": "fastapi"}
+)
+
+result = await engine.execute("main_workflow", state)
 ```
-**결과**: React + Node.js 풀스택 애플리케이션, 테스트, 배포 설정까지 완성
+**결과**: React + FastAPI 풀스택 애플리케이션, 테스트, 배포 설정까지 완성
 
 ### 🔸 핫픽스 파이프라인 (60분 이내)
 프로덕션 긴급 수정을 신속하게 처리합니다.
-```bash
-claude /hotfix "사용자 로그인 불가 문제"
+```python
+state = WorkflowState(
+    task_type="hotfix",
+    requirements="사용자 로그인 불가 문제 수정",
+    config={"priority": "urgent"}
+)
+
+result = await engine.execute("hotfix_workflow", state)
 ```
 **결과**: 문제 분석 → 수정 → 테스트 → 배포까지 1시간 내 완료
 
-### 🔶 특화 워크플로우 (v1.1 신규)
+### 🔶 특화 워크플로우
 
 #### 데이터 파이프라인 개발 (2-3시간)
-```bash
-claude /data-pipeline "실시간 로그 분석 파이프라인"
+```python
+state = WorkflowState(
+    task_type="data_pipeline",
+    requirements="실시간 로그 분석 파이프라인",
+    config={"streaming": true, "storage": "s3"}
+)
 ```
 **결과**: Kafka + Spark + Airflow 기반 완전한 데이터 파이프라인
 
 #### ML/AI 모델 개발 (3-4시간)
-```bash
-claude /ml-ai-model "고객 이탈 예측 모델"
+```python
+state = WorkflowState(
+    task_type="ml_model",
+    requirements="고객 이탈 예측 모델",
+    config={"framework": "scikit-learn", "deployment": "api"}
+)
 ```
 **결과**: AutoML, MLOps 파이프라인, API 서빙, 모니터링 포함
 
-#### 모바일 앱 개발 (3-4시간)
-```bash
-claude /mobile-app "피트니스 트래킹 앱"
-```
-**결과**: React Native 크로스플랫폼 앱, 테스트, 스토어 배포 준비
-
 #### 마이크로서비스 개발 (4-5시간)
-```bash
-claude /microservices-development "이커머스 플랫폼 백엔드"
+```python
+state = WorkflowState(
+    task_type="microservices",
+    requirements="이커머스 플랫폼 백엔드",
+    config={"services": ["user", "product", "order", "payment"]}
+)
 ```
 **결과**: API Gateway, Service Mesh, 모니터링까지 포함한 완전한 마이크로서비스 아키텍처
 
 ## 💡 사용 시나리오
 
 ### 👨‍💻 개인 개발자
-```bash
+```python
 # 사이드 프로젝트 아이디어를 30분 만에 MVP로
-claude /basic-development "음식 배달 앱 (주문, 결제, 배송 추적)"
+engine = WorkflowEngine()
+state = WorkflowState(
+    task_type="development",
+    requirements="음식 배달 앱 (주문, 결제, 배송 추적)"
+)
+await engine.execute("main_workflow", state)
 ```
 
 ### 🏢 스타트업 팀
-```bash
+```python
 # 빠른 프로토타입으로 투자 유치
-claude /basic-development "B2B SaaS 플랫폼 (대시보드, 분석, 청구)"
+state = WorkflowState(
+    task_type="development",
+    requirements="B2B SaaS 플랫폼 (대시보드, 분석, 청구)"
+)
+await engine.execute("main_workflow", state)
 ```
 
 ### 🏭 엔터프라이즈
-```bash
+```python
 # 레거시 시스템 현대화
-claude /microservices-development "기존 모놀리스를 마이크로서비스로 분해"
+state = WorkflowState(
+    task_type="microservices",
+    requirements="기존 모놀리스를 마이크로서비스로 분해"
+)
+await engine.execute("microservices_workflow", state)
 ```
 
-## 📂 프로젝트 생성 모범 사례
+## 📊 모니터링
 
-### 🎯 권장 방법: 사용자 레벨 명령어 설정
-
-**초기 설정 (한 번만)**
+### Prometheus + Grafana 시작
 ```bash
-# agentic-dev-pipeline 디렉토리에서
-mkdir -p ~/.claude/commands
-cp .claude/commands/*.md ~/.claude/commands/
+cd monitoring
+docker-compose -f docker-compose.monitoring.yml up -d
 ```
 
-**새 프로젝트 생성시**
-```bash
-# 1. 프로젝트 디렉토리 생성
-mkdir ~/projects/my-awesome-app
-cd ~/projects/my-awesome-app
-
-# 2. 바로 개발 시작!
-claude /basic-development "요구사항 설명"
-```
-
-### 🗂️ 프로젝트 구조 관리
-
-**개별 프로젝트용 디렉토리**
-```
-~/projects/
-├── todo-app/          # claude /basic-development "TODO 앱"
-├── ecommerce-api/     # claude /microservices-development "이커머스"
-├── data-pipeline/     # claude /data-pipeline "로그 분석"
-└── mobile-app/        # claude /mobile-app "피트니스 앱"
-```
-
-**팀 프로젝트 공유**
-```bash
-# 프로젝트별 명령어 포함
-mkdir -p my-team-project/.claude/commands
-cp ~/.claude/commands/basic-development.md my-team-project/.claude/commands/
-git add .claude/
-git commit -m "Add project-specific Claude commands"
-```
+모니터링 대시보드:
+- Grafana: http://localhost:3000 (admin/admin)
+- Prometheus: http://localhost:9090
+- Alertmanager: http://localhost:9093
 
 ## 🎛️ 고급 기능
 
 ### 🔧 커스터마이징
 프로젝트 요구사항에 맞게 에이전트 동작을 조정할 수 있습니다.
 
-```markdown
-# CLAUDE.md - 프로젝트별 AI 에이전트 설정
-## 기술 스택
-- Backend: Python FastAPI (Node.js 대신)
-- Database: MongoDB (PostgreSQL 대신)
-- Frontend: Vue.js (React 대신)
+```python
+# custom_config.py
+custom_config = {
+    "agents": {
+        "development": {
+            "framework": "fastapi",
+            "language": "python",
+            "database": "postgresql"
+        },
+        "testing": {
+            "coverage_threshold": 90,
+            "security_scan": True
+        }
+    }
+}
 
-## 품질 기준
-- 테스트 커버리지: 90% 이상
-- API 응답시간: < 100ms
-- 보안: HIPAA 준수 필수
+# 사용
+state = WorkflowState(
+    task_type="development",
+    requirements="API 서버 개발",
+    config=custom_config
+)
 ```
 
 ### 🔄 파이프라인 체이닝
 복잡한 개발 과정을 여러 워크플로우로 분할 실행:
-```bash
-# 단계별 실행
-claude /basic-development "앱 요구사항" && \
-claude /security-audit "보안 감사 실행" && \
-claude /performance-optimization "성능 최적화"
+```python
+# 순차적 실행
+results = []
+for workflow in ["development", "testing", "deployment"]:
+    state = WorkflowState(
+        task_type=workflow,
+        requirements=f"{workflow} 단계 실행",
+        config={"previous_results": results}
+    )
+    result = await engine.execute(f"{workflow}_workflow", state)
+    results.append(result)
 ```
 
 ### 📊 실시간 모니터링
 개발 과정을 실시간으로 모니터링:
 ```bash
 # 모니터링 시스템 시작
-npm run monitor:start
+cd monitoring
+docker-compose -f docker-compose.monitoring.yml up -d
 
 # 대시보드 접속
 # - Grafana: http://localhost:3000
 # - Prometheus: http://localhost:9090
-# - Kibana: http://localhost:5601
 ```
 
 ## 🛠️ 기술 스택
 
 ### 핵심 AI 플랫폼
-- **Claude Code**: 메인 AI 개발 에이전트
+- **Claude API**: Anthropic의 강력한 LLM API
+- **LangGraph**: 상태 기반 워크플로우 오케스트레이션
 - **MCP (Model Context Protocol)**: 도구 통합 표준
 
-### 개발 도구 생태계
-- **Version Control**: Git, GitHub/GitLab
-- **Containerization**: Docker, Docker Compose
-- **Orchestration**: Kubernetes, Helm
-- **CI/CD**: GitHub Actions, ArgoCD
-- **Monitoring**: Prometheus, Grafana, ELK Stack
-- **Security**: Snyk, OWASP ZAP, SonarQube
+### 백엔드 인프라
+- **API Framework**: FastAPI (비동기, 고성능)
+- **Database**: PostgreSQL 15+ (메인 DB)
+- **Cache**: Redis 7+ (캐싱 및 큐)
+- **Vector Store**: ChromaDB (임베딩 저장)
+- **ORM**: SQLAlchemy 2.0+
+- **Data Validation**: Pydantic V2
 
-### 지원 기술 스택
-- **Backend**: Node.js, Python, Java, Go
-- **Frontend**: React, Vue.js, Angular
-- **Database**: PostgreSQL, MongoDB, Redis
-- **Cloud**: AWS, GCP, Azure
+### 모니터링 및 관찰성
+- **Metrics**: Prometheus
+- **Visualization**: Grafana
+- **Logging**: 구조화된 JSON 로깅
+- **Tracing**: OpenTelemetry (계획)
+
+### 개발 도구
+- **Testing**: pytest, pytest-asyncio
+- **Code Quality**: black, ruff, mypy
+- **CI/CD**: GitHub Actions
+- **Containerization**: Docker, Docker Compose
+- **Documentation**: mkdocs, mkdocstrings
 
 ## 📊 성과 지표
 
@@ -336,21 +391,21 @@ npm run monitor:start
 - [📐 시스템 아키텍처](docs/architecture/system-architecture.md)
 - [🤖 AI 에이전트 설계](docs/design/agent-design.md)
 - [🔄 워크플로우 설계](docs/design/workflow-design.md)
-- [⚙️ 구현 가이드](docs/guides/implementation.md)
+- [⚙️ 구현 가이드](docs/implementation/)
 - [🔧 도구 통합](docs/guides/tool-integration.md)
 - [🚨 문제 해결](docs/guides/troubleshooting.md)
 - [✨ 베스트 프랙티스](docs/guides/best-practices.md)
 
 ### 💼 실습 예제
-- [기초] [간단한 API 서버](examples/simple-api/)
-- [중급] [풀스택 웹 애플리케이션](examples/web-app/)
-- [고급] [마이크로서비스 아키텍처](examples/microservices/)
-- [전문] [데이터 파이프라인](examples/data-pipeline/)
+- [기초] [빠른 시작 가이드](QUICKSTART.md)
+- [중급] [API 사용법](docs/api/README.md)
+- [고급] [커스텀 에이전트 개발](docs/guides/custom-agents.md)
+- [전문] [프로덕션 배포](docs/deployment/README.md)
 
-### 🎥 튜토리얼 (계획)
-- [ ] "5분 만에 시작하는 에이전틱 개발"
-- [ ] "나만의 AI 에이전트 만들기"
-- [ ] "엔터프라이즈 적용 전략"
+### 🎥 튜토리얼
+- [Python 클라이언트 사용법](docs/tutorials/python-client.md)
+- [REST API 통합](docs/tutorials/rest-api.md)
+- [WebSocket 실시간 통신](docs/tutorials/websocket.md)
 
 ## 🤝 커뮤니티 및 지원
 
@@ -398,33 +453,47 @@ npm run monitor:start
 
 ## 📚 빠른 참조
 
-### 🎯 사용 가능한 명령어
+### 🎯 API 엔드포인트
 
-| 명령어 | 설명 | 예시 |
-|--------|------|------|
-| `/basic-development` | 풀스택 웹 애플리케이션 개발 | `claude /basic-development "TODO 앱"` |
-| `/data-pipeline` | 데이터 파이프라인 구축 | `claude /data-pipeline "실시간 분석"` |
-| `/ml-ai-model` | ML/AI 모델 개발 | `claude /ml-ai-model "추천 시스템"` |
-| `/mobile-app` | 모바일 앱 개발 | `claude /mobile-app "날씨 앱"` |
-| `/microservices-development` | 마이크로서비스 구축 | `claude /microservices-development "이커머스"` |
-| `/hotfix` | 긴급 버그 수정 | `claude /hotfix "로그인 오류"` |
-| `/pipeline` | 기본 파이프라인 실행 | `claude /pipeline` |
-| `/status` | 프로젝트 상태 확인 | `claude /status` |
+### 파이프라인 관리
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| POST | `/api/v1/pipelines` | 새 파이프라인 생성 |
+| GET | `/api/v1/pipelines` | 파이프라인 목록 조회 |
+| GET | `/api/v1/pipelines/{id}` | 파이프라인 상세 조회 |
+| GET | `/api/v1/pipelines/{id}/status` | 파이프라인 상태 확인 |
+| POST | `/api/v1/pipelines/{id}/cancel` | 파이프라인 취소 |
 
-### ⚡ 유용한 스크립트
+### 에이전트 제어
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| GET | `/api/v1/agents` | 에이전트 목록 조회 |
+| POST | `/api/v1/agents/{name}/execute` | 특정 에이전트 실행 |
+| GET | `/api/v1/agents/{name}/status` | 에이전트 상태 확인 |
+
+### ⚡ 유용한 명령어
 
 ```bash
-# 건강 상태 확인
-./scripts/health-check.sh
+# 테스트 실행
+make test
 
-# 로컬 인프라 관리
-npm run docker:up      # 시작
-npm run docker:down    # 종료
-npm run docker:logs    # 로그 확인
+# 테스트 커버리지
+make test-cov
+
+# 코드 포맷팅
+make format
+
+# 린트 검사  
+make lint
+
+# Docker 관리
+make docker-up      # 시작
+make docker-down    # 종료
+make docker-logs    # 로그 확인
 
 # 모니터링
-npm run monitor:start  # 모니터링 시작
-npm run monitor:stop   # 모니터링 종료
+cd monitoring
+docker-compose -f docker-compose.monitoring.yml up -d
 ```
 
 ## 🏆 기여하기
@@ -480,38 +549,45 @@ Made with ❤️ by developers, for developers
 
 ### 자주 사용하는 명령어
 ```bash
-# 상태 확인
-claude /status
+# API 상태 확인
+curl http://localhost:8000/health
 
-# 비용 확인  
-claude /cost
+# 메트릭 확인  
+curl http://localhost:8000/metrics
 
-# 건강 검진
-./scripts/health-check.sh
+# 파이프라인 목록
+curl http://localhost:8000/api/v1/pipelines
 
-# 로그 수집
-./scripts/collect-logs.sh
+# 로그 확인
+tail -f logs/app.log
 
-# 모니터링 시작
-npm run monitor:start
+# 모니터링 대시보드
+# Grafana: http://localhost:3000
+# Prometheus: http://localhost:9090
 ```
 
 ### 긴급 상황
-```bash
+```python
 # 핫픽스 실행
-export ISSUE_DESCRIPTION="긴급 수정이 필요한 문제 설명"
-claude -f workflows/hotfix-pipeline.md
+state = WorkflowState(
+    task_type="hotfix",
+    requirements="긴급 수정이 필요한 문제 설명",
+    config={"priority": "critical", "rollback_enabled": True}
+)
+result = await engine.execute("hotfix_workflow", state)
 
 # 롤백
-claude -p "마지막 성공한 배포로 롤백해줘"
-
-# 장애 대응
-claude -p "현재 시스템 상태를 분석하고 문제점을 찾아줘"
+state = WorkflowState(
+    task_type="rollback",
+    requirements="마지막 성공한 배포로 롤백",
+    config={"target_version": "v1.2.3"}
+)
+result = await engine.execute("rollback_workflow", state)
 ```
 
 ### 유용한 링크
 - [📚 전체 문서](docs/)
-- [💼 사용 예제](examples/)
-- [🔧 설정 파일](configs/)
-- [🔄 워크플로우](workflows/)
+- [💼 구현 가이드](docs/implementation/)
+- [🔧 API 문서](http://localhost:8000/docs)
+- [🔄 소스 코드](src/)
 - [🐳 Docker 설정](docker-compose.yml)
